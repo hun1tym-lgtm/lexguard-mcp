@@ -52,7 +52,7 @@ def register_mcp_routes(api: FastAPI, law_service: LawService, health_service: H
                 logger.info("=" * 80)
             raise
     
-    @api.options("/mcp")
+    @api.options("/mcp", include_in_schema=False)
     async def mcp_options(request: Request):
         """CORS preflight 요청 처리"""
         logger.info("MCP OPTIONS request received")
@@ -67,7 +67,7 @@ def register_mcp_routes(api: FastAPI, law_service: LawService, health_service: H
             }
         )
     
-    @api.get("/mcp")
+    @api.get("/mcp", include_in_schema=False)
     async def mcp_get_sse_stream(request: Request):
         """MCP Streamable HTTP GET 엔드포인트"""
         accept_header = request.headers.get("Accept", "")
@@ -101,7 +101,7 @@ def register_mcp_routes(api: FastAPI, law_service: LawService, health_service: H
             }
         )
     
-    @api.post("/mcp")
+    @api.post("/mcp", include_in_schema=False)
     async def mcp_streamable_http(request: Request):
         """
         MCP Streamable HTTP 엔드포인트 (3개 핵심 툴만)

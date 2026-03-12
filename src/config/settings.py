@@ -42,7 +42,12 @@ def get_api() -> FastAPI:
         # 서버 종료 시
         logger.info("🛑 LexGuard MCP 서버 종료 중...")
     
-    api = FastAPI(lifespan=lifespan)
+    api = FastAPI(
+        title="LexGuard API Tools",
+        description="한국 법령 및 행정규칙을 검색하고 상세 내용을 조회하는 GPT Actions 친화형 API입니다.",
+        version="1.2.0",
+        lifespan=lifespan,
+    )
     
     # CORS 설정 추가 (Cursor 등 클라이언트에서 접근 가능하도록)
     api.add_middleware(

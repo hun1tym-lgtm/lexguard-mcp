@@ -1,5 +1,16 @@
 """Pydantic 모델 정의"""
 from .schemas import (
+    GPTActionSearchLawRequest,
+    GPTActionListLawNamesRequest,
+    GPTActionGetLawDetailRequest,
+    GPTActionSearchAdminRuleRequest,
+    GPTActionGetAdminRuleDetailRequest,
+    GPTActionLawSearchResponse,
+    GPTActionLawNameListResponse,
+    GPTActionLawDetailResponse,
+    GPTActionAdminRuleSearchResponse,
+    GPTActionAdminRuleDetailResponse,
+    GPTActionHealthResponse,
     SearchLawRequest,
     GetLawRequest,
     ListLawNamesRequest,
@@ -25,6 +36,17 @@ from .schemas import (
 )
 
 __all__ = [
+    "GPTActionSearchLawRequest",
+    "GPTActionListLawNamesRequest",
+    "GPTActionGetLawDetailRequest",
+    "GPTActionSearchAdminRuleRequest",
+    "GPTActionGetAdminRuleDetailRequest",
+    "GPTActionLawSearchResponse",
+    "GPTActionLawNameListResponse",
+    "GPTActionLawDetailResponse",
+    "GPTActionAdminRuleSearchResponse",
+    "GPTActionAdminRuleDetailResponse",
+    "GPTActionHealthResponse",
     "SearchLawRequest",
     "GetLawRequest",
     "ListLawNamesRequest",

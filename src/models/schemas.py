@@ -2,8 +2,170 @@
 Pydantic 모델 정의
 모든 요청/응답 스키마를 여기에 정의
 """
-from pydantic import BaseModel, Field
-from typing import Optional, Literal, List
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, Dict, Optional, Literal, List
+
+
+class GPTActionSearchLawRequest(BaseModel):
+    """GPT Actions용 법령 검색 요청"""
+    query: str = Field(..., description="법령 검색어")
+    page: int = Field(1, description="페이지 번호", ge=1)
+    per_page: int = Field(10, description="페이지당 결과 수", ge=1, le=50)
+
+
+class GPTActionListLawNamesRequest(BaseModel):
+    """GPT Actions용 법령명 목록 조회 요청"""
+    query: Optional[str] = Field(None, description="검색어")
+    page: int = Field(1, description="페이지 번호", ge=1)
+    per_page: int = Field(50, description="페이지당 결과 수", ge=1, le=100)
+
+
+class GPTActionGetLawDetailRequest(BaseModel):
+    """GPT Actions용 법령 상세 조회 요청"""
+    law_name: str = Field(..., description="상세 조회할 법령명")
+
+
+class GPTActionSearchAdminRuleRequest(BaseModel):
+    """GPT Actions용 행정규칙 검색 요청"""
+    query: str = Field(..., description="행정규칙 검색어")
+    page: int = Field(1, description="페이지 번호", ge=1)
+    per_page: int = Field(10, description="페이지당 결과 수", ge=1, le=100)
+
+
+class GPTActionGetAdminRuleDetailRequest(BaseModel):
+    """GPT Actions용 행정규칙 상세 조회 요청"""
+    rule_name: str = Field(..., description="상세 조회할 행정규칙명")
+
+
+class GPTActionBaseResponse(BaseModel):
+    """GPT Actions용 공통 응답"""
+    model_config = ConfigDict(extra="allow")
+
+    status: str = Field(..., description="success 또는 error")
+    message: Optional[str] = Field(None, description="요약 메시지")
+    error: Optional[str] = Field(None, description="오류 메시지")
+    recovery_guide: Optional[str] = Field(None, description="오류 복구 가이드")
+
+
+class GPTActionLawSearchItem(BaseModel):
+    """GPT Actions용 법령 검색 결과 아이템"""
+    model_config = ConfigDict(extra="allow")
+
+    name: Optional[str] = Field(None, description="법령명")
+    law_id: Optional[str] = Field(None, description="법령 ID")
+    law_serial_number: Optional[str] = Field(None, description="법령 일련번호")
+    law_type: Optional[str] = Field(None, description="법령 구분")
+    ministry: Optional[str] = Field(None, description="소관 부처명")
+    effective_date: Optional[str] = Field(None, description="시행일자")
+    promulgation_date: Optional[str] = Field(None, description="공포일자")
+    detail_link: Optional[str] = Field(None, description="상세 링크")
+    raw: Dict[str, Any] = Field(default_factory=dict, description="원본 아이템")
+
+
+class GPTActionLawSearchResult(BaseModel):
+    """GPT Actions용 법령 검색 응답 본문"""
+    query: Optional[str] = Field(None, description="검색어")
+    items: List[GPTActionLawSearchItem] = Field(default_factory=list, description="검색 결과")
+    count: int = Field(0, description="현재 페이지 결과 수")
+    total: int = Field(0, description="전체 결과 수")
+    page: int = Field(1, description="페이지 번호")
+    per_page: int = Field(10, description="페이지당 결과 수")
+    api_url: Optional[str] = Field(None, description="원본 API URL")
+
+
+class GPTActionLawSearchResponse(GPTActionBaseResponse):
+    """GPT Actions용 법령 검색 응답"""
+    result: GPTActionLawSearchResult = Field(default_factory=GPTActionLawSearchResult)
+
+
+class GPTActionLawNameItem(BaseModel):
+    """GPT Actions용 법령명 목록 아이템"""
+    name: str = Field(..., description="법령명")
+
+
+class GPTActionLawNameListResult(BaseModel):
+    """GPT Actions용 법령명 목록 응답 본문"""
+    query: Optional[str] = Field(None, description="검색어")
+    items: List[GPTActionLawNameItem] = Field(default_factory=list, description="법령명 목록")
+    count: int = Field(0, description="현재 페이지 결과 수")
+    total: int = Field(0, description="전체 결과 수")
+    page: int = Field(1, description="페이지 번호")
+    per_page: int = Field(50, description="페이지당 결과 수")
+    api_url: Optional[str] = Field(None, description="원본 API URL")
+
+
+class GPTActionLawNameListResponse(GPTActionBaseResponse):
+    """GPT Actions용 법령명 목록 응답"""
+    result: GPTActionLawNameListResult = Field(default_factory=GPTActionLawNameListResult)
+
+
+class GPTActionLawDetailResult(BaseModel):
+    """GPT Actions용 법령 상세 응답 본문"""
+    law_name: Optional[str] = Field(None, description="법령명")
+    law_id: Optional[str] = Field(None, description="법령 ID")
+    detail: Optional[Any] = Field(None, description="상세 내용")
+    articles: List[Dict[str, Any]] = Field(default_factory=list, description="조문 목록")
+    api_url: Optional[str] = Field(None, description="원본 API URL")
+
+
+class GPTActionLawDetailResponse(GPTActionBaseResponse):
+    """GPT Actions용 법령 상세 응답"""
+    result: GPTActionLawDetailResult = Field(default_factory=GPTActionLawDetailResult)
+
+
+class GPTActionAdminRuleSearchItem(BaseModel):
+    """GPT Actions용 행정규칙 검색 결과 아이템"""
+    model_config = ConfigDict(extra="allow")
+
+    name: Optional[str] = Field(None, description="행정규칙명")
+    rule_id: Optional[str] = Field(None, description="행정규칙 ID")
+    rule_serial_number: Optional[str] = Field(None, description="행정규칙 일련번호")
+    rule_type: Optional[str] = Field(None, description="행정규칙 종류")
+    ministry: Optional[str] = Field(None, description="소관 부처명")
+    effective_date: Optional[str] = Field(None, description="시행일자")
+    promulgation_date: Optional[str] = Field(None, description="발령일자")
+    detail_link: Optional[str] = Field(None, description="상세 링크")
+    raw: Dict[str, Any] = Field(default_factory=dict, description="원본 아이템")
+
+
+class GPTActionAdminRuleSearchResult(BaseModel):
+    """GPT Actions용 행정규칙 검색 응답 본문"""
+    query: Optional[str] = Field(None, description="검색어")
+    items: List[GPTActionAdminRuleSearchItem] = Field(default_factory=list, description="검색 결과")
+    count: int = Field(0, description="현재 페이지 결과 수")
+    total: int = Field(0, description="전체 결과 수")
+    page: int = Field(1, description="페이지 번호")
+    per_page: int = Field(10, description="페이지당 결과 수")
+    api_url: Optional[str] = Field(None, description="원본 API URL")
+
+
+class GPTActionAdminRuleSearchResponse(GPTActionBaseResponse):
+    """GPT Actions용 행정규칙 검색 응답"""
+    result: GPTActionAdminRuleSearchResult = Field(default_factory=GPTActionAdminRuleSearchResult)
+
+
+class GPTActionAdminRuleDetailResult(BaseModel):
+    """GPT Actions용 행정규칙 상세 응답 본문"""
+    rule_name: Optional[str] = Field(None, description="행정규칙명")
+    detail: Optional[Any] = Field(None, description="상세 내용")
+    articles: List[Dict[str, Any]] = Field(default_factory=list, description="조문 목록")
+    api_url: Optional[str] = Field(None, description="원본 API URL")
+
+
+class GPTActionAdminRuleDetailResponse(GPTActionBaseResponse):
+    """GPT Actions용 행정규칙 상세 응답"""
+    result: GPTActionAdminRuleDetailResult = Field(default_factory=GPTActionAdminRuleDetailResult)
+
+
+class GPTActionHealthResponse(BaseModel):
+    """GPT Actions용 health 응답"""
+    model_config = ConfigDict(extra="allow")
+
+    status: str = Field(..., description="서버 상태")
+    environment: Dict[str, Any] = Field(default_factory=dict, description="환경 정보")
+    message: Optional[str] = Field(None, description="상태 메시지")
+    note: Optional[str] = Field(None, description="참고 메시지")
+    server: Optional[str] = Field(None, description="서버 상태 텍스트")
 
 
 class SearchLawRequest(BaseModel):
@@ -173,4 +335,4 @@ class SearchAdministrativeRuleRequest(BaseModel):
 
 class GetAdminRuleDetailRequest(BaseModel):
     """특정 행정규칙 상세 조회 요청 모델"""
-    rule_name: str = Field(..., description="조회할 행정규칙의 이름 (예: '공무원 여비 규정')")
+    rule_name: str = Field(..., description="조회할 행정규칙의 이름 (예: '공무원 여비 규정')")
