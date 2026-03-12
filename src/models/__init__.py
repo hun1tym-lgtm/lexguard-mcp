@@ -21,6 +21,7 @@ from .schemas import (
     CompareLawsRequest,
     SearchLocalOrdinanceRequest,
     SearchAdministrativeRuleRequest,
+    GetAdminRuleDetailRequest,
 )
 
 __all__ = [
@@ -45,5 +46,6 @@ __all__ = [
     "CompareLawsRequest",
     "SearchLocalOrdinanceRequest",
     "SearchAdministrativeRuleRequest",
+    "GetAdminRuleDetailRequest",
 ]
 
