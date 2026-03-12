@@ -203,3 +203,86 @@ Issues & PRs are always welcome.
 
 > **LexGuard MCP — 법률 정보의 실마리를 찾아드립니다.**
 > 법은 어렵지만, 첫 실마리는 쉬워질 수 있습니다.
+
+## 현재 지원 HTTP 도구
+
+이 배포 서버는 현재 아래 HTTP 도구를 제공한다.
+
+- health
+- search_law_tool
+- list_law_names_tool
+- get_law_detail_tool
+- search_admin_rule_tool
+- get_admin_rule_detail_tool
+
+OpenAPI 스키마와 GPT Actions는 반드시 `/tools` 응답에 실제로 노출된 도구 기준으로 관리한다.
+
+---
+
+## 행정규칙 API 참고
+
+이 프로젝트의 행정규칙 검색 및 상세 조회 기능은 국가법령정보센터 Open API의 행정규칙 관련 규격을 기준으로 구현한다.
+
+### 1. 목록 조회
+- endpoint: `lawSearch.do`
+- target: `admrul`
+
+주요 파라미터:
+- `OC`
+- `target=admrul`
+- `query`
+- `page`
+- `display`
+- `search`
+- `type`
+
+목록 결과에는 아래 값이 포함될 수 있다.
+- 행정규칙 일련번호
+- 행정규칙 ID
+- 행정규칙명
+- 행정규칙 상세 링크
+- 시행일자
+- 소관부처명
+
+### 2. 본문 조회
+- endpoint: `lawService.do`
+- target: `admrul`
+
+상세 조회 파라미터:
+- `ID`
+- `LID`
+- `LM`
+
+상세 응답에는 아래 내용이 포함될 수 있다.
+- 조문내용
+- 부칙
+- 별표
+- 첨부파일 링크
+
+---
+
+## 행정규칙 상세 조회 구현 원칙
+
+행정규칙 상세 조회는 이름 exact match만 의존하지 않는다.
+
+우선순위:
+1. `ID` 또는 `LID` 기반 상세 조회
+2. `LM` 기반 조회는 fallback
+3. 사용자 입력 이름은 내부 정규화 후 재검색 가능
+4. 검색 결과와 상세 조회는 가능한 한 동일한 식별값 체계로 연결
+
+권장 흐름:
+1. `search_admin_rule_tool`로 검색
+2. 목록 결과에서 `ID` 또는 `LID` 확보
+3. `get_admin_rule_detail_tool` 내부에서는 `ID/LID` 우선 상세 조회
+4. exact match 실패 시 fallback 로직 적용
+
+---
+
+## 유지보수 원칙
+
+- 기존 정상 기능은 절대 깨뜨리지 않는다.
+- 기존 엔드포인트 경로, 파라미터명, 응답 구조를 함부로 변경하지 않는다.
+- 새 기능은 추가 방식으로만 구현한다.
+- `/tools`에 실제 노출된 뒤에만 OpenAPI 스키마를 수정한다.
+- Render 재배포 후 반드시 `/tools`와 기존 기능 회귀 테스트를 수행한다.
