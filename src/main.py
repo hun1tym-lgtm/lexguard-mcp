@@ -50,20 +50,10 @@ if __name__ == "__main__":
     # 프로덕션에서는 환경 변수로 reload=False 설정
     reload = os.environ.get('RELOAD', 'true').lower() == 'true'
     
-    # uvicorn access log 필터링: Health Check 요청 제외
-    class HealthCheckFilter(logging.Filter):
-        """Health Check 요청을 access log에서 필터링"""
-        def filter(self, record):
-            # uvicorn access log 형식: "GET /health HTTP/1.1" 200 OK
-            message = record.getMessage()
-            # Health Check 경로나 render-health-check 헤더가 있는 요청은 로깅하지 않음
-            if "/health" in message or "render-health-check" in message:
-                return False
-            return True
-    
-    # uvicorn access logger에 필터 추가
+    # uvicorn access logger 획득
     access_logger = logging.getLogger("uvicorn.access")
-    access_logger.addFilter(HealthCheckFilter())
+    # Health check 필터 제거: 모든 요청(/health 포함)을 로깅하여 GPT Actions 도달 여부 확인
+
     
     # Graceful shutdown은 uvicorn이 자동으로 처리하므로
     # 별도의 signal handler는 제거하고 atexit만 사용

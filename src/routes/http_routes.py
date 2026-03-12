@@ -2,7 +2,7 @@
 HTTP Routes - 일반 HTTP 엔드포인트
 Controller 패턴: 요청을 받아 Service를 호출
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.requests import ClientDisconnect
 from ..services.law_service import LawService
 from ..services.health_service import HealthService
@@ -51,14 +51,31 @@ def register_http_routes(api: FastAPI, law_service: LawService, health_service: 
         }
     
     @api.get("/health")
-    async def health_check_get():
+    async def health_check_get(request: Request):
         """HTTP GET endpoint: Health check"""
-        return await health_service.check_health()
+        logger.info("=" * 80)
+        logger.info(f"HEALTH GET REQUEST: Client={request.client}, Query={request.query_params}")
+        logger.info(f"Headers: {dict(request.headers)}")
+        result = await health_service.check_health()
+        logger.info(f"Health Response: {result['status']}, Ready: {result['environment']['api_ready']}")
+        logger.info("=" * 80)
+        return result
     
     @api.post("/health")
-    async def health_check_post():
+    async def health_check_post(request: Request):
         """HTTP POST endpoint: Health check"""
-        return await health_service.check_health()
+        logger.info("=" * 80)
+        logger.info(f"HEALTH POST REQUEST: Client={request.client}, Query={request.query_params}")
+        logger.info(f"Headers: {dict(request.headers)}")
+        try:
+            body = await request.json()
+            logger.info(f"Body: {body}")
+        except Exception:
+            logger.info("Body: <Cannot parse JSON or empty>")
+        result = await health_service.check_health()
+        logger.info(f"Health Response: {result['status']}, Ready: {result['environment']['api_ready']}")
+        logger.info("=" * 80)
+        return result
     
     @api.get("/check-ip")
     async def check_server_ip():
