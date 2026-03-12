@@ -172,8 +172,39 @@ class AdministrativeRuleRepository(BaseLawRepository):
             params = {
                 "target": "admrul",
                 "type": "JSON",
-                "query": self.normalize_search_query(rule_name)
             }
+            
+            # rule_name이 숫자로만 이뤄진 일련번호가 아니라면, 검색 API를 통해 ID(행정규칙일련번호) 획득
+            if not rule_name.isdigit():
+                search_res = self.search_administrative_rule(query=rule_name, per_page=50, arguments=arguments)
+                rules = search_res.get("rules", [])
+                
+                found_id = None
+                norm_query = rule_name.replace(" ", "")
+                for r in rules:
+                    name = r.get("admrulNm", r.get("행정규칙명", ""))
+                    if name.strip() == rule_name.strip():
+                        found_id = r.get("admrulSeq", r.get("행정규칙일련번호"))
+                        break
+                
+                if not found_id and rules:
+                    for r in rules:
+                        name = r.get("admrulNm", r.get("행정규칙명", ""))
+                        if name.replace(" ", "") == norm_query:
+                            found_id = r.get("admrulSeq", r.get("행정규칙일련번호"))
+                            break
+                            
+                if not found_id and rules:
+                    # 일치하는 이름이 없더라도 첫 번째 검색 결과를 제공하여 사용자 경험 유지
+                    found_id = rules[0].get("admrulSeq", rules[0].get("행정규칙일련번호"))
+                    
+                if found_id:
+                    params["ID"] = found_id
+                else:
+                    # 검색 결과조차 없으면 애초에 상세조회가 불가능하므로, 그냥 원래대로 query로 보냄
+                    params["query"] = self.normalize_search_query(rule_name)
+            else:
+                params["ID"] = rule_name
             
             _, api_key_error = self.attach_api_key(params, arguments, LAW_API_BASE_URL)
             if api_key_error:
