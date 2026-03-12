@@ -89,8 +89,10 @@ class AdministrativeRuleRepository(BaseLawRepository):
             }
             
             if isinstance(data, dict):
-                if "AdmrulSearch" in data:
-                    admrul_search = data["AdmrulSearch"]
+                # API 응답 키가 AdmRulSearch(대문자 R) 또는 AdmrulSearch 로 올 수 있음
+                search_key = "AdmRulSearch" if "AdmRulSearch" in data else "AdmrulSearch"
+                if search_key in data:
+                    admrul_search = data[search_key]
                     if isinstance(admrul_search, dict):
                         total_raw = admrul_search.get("totalCnt", 0)
                         try:
