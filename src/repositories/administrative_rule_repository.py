@@ -141,10 +141,89 @@ class AdministrativeRuleRepository(BaseLawRepository):
             }
             failure_cache[cache_key] = error_result
             return error_result
+            logger.exception("예상치 못한 오류")
+            return {
+                "error": f"예상치 못한 오류: {str(e)}",
+                "recovery_guide": "시스템 오류가 발생했습니다. 서버 로그를 확인하거나 관리자에게 문의하세요."
+            }
+    
+    def get_administrative_rule_detail(
+        self,
+        rule_name: str,
+        arguments: Optional[dict] = None
+    ) -> dict:
+        """행정규칙의 상세 정보(조문 등)를 조회합니다."""
+        logger.debug("get_administrative_rule_detail called | rule_name=%r", rule_name)
+        
+        # 행정규칙 조회도 동일하게 캐시 키 생성 (mode는 항상 detail)
+        cache_key = ("admrul_detail", rule_name, "detail", None, None, None, None)
+        
+        if cache_key in search_cache:
+            return search_cache[cache_key]
+        if cache_key in failure_cache:
+            return failure_cache[cache_key]
+        
+        # get_law와 달리 별도 API URL (LAW_API_BASE_URL)을 사용
+        from .base import LAW_API_BASE_URL
+        
+        try:
+            params = {
+                "target": "admrul",
+                "type": "JSON",
+                "query": self.normalize_search_query(rule_name)
+            }
+            
+            _, api_key_error = self.attach_api_key(params, arguments, LAW_API_BASE_URL)
+            if api_key_error:
+                return api_key_error
+            
+            response = requests.get(LAW_API_BASE_URL, params=params, timeout=10)
+            
+            invalid_response = self.validate_drf_response(response)
+            if invalid_response:
+                return invalid_response
+                
+            response.raise_for_status()
+            
+            try:
+                data = response.json()
+            except json.JSONDecodeError as e:
+                return {
+                    "error": f"API 응답이 유효한 JSON 형식이 아닙니다: {str(e)}",
+                    "rule_name": rule_name,
+                    "api_url": response.url,
+                    "recovery_guide": "API 응답 형식 오류입니다. API 서버 상태를 확인하거나 잠시 후 다시 시도하세요."
+                }
+                
+            # 응답 데이터 파싱 로직 (원본 데이터 반환을 기본 구조로 잡습니다)
+            result = {
+                "rule_name": rule_name,
+                "api_url": response.url,
+                "detail": data
+            }
+            
+            search_cache[cache_key] = result
+            return result
+            
+        except requests.exceptions.Timeout:
+            error_result = {
+                "error": "API 호출 타임아웃",
+                "recovery_guide": "네트워크 응답 시간이 초과되었습니다. 잠시 후 다시 시도하거나, 인터넷 연결을 확인하세요."
+            }
+            failure_cache[cache_key] = error_result
+            return error_result
+        except requests.exceptions.RequestException as e:
+            error_result = {
+                "error": f"API 요청 실패: {str(e)}",
+                "recovery_guide": "네트워크 오류입니다. 잠시 후 다시 시도하거나, 인터넷 연결을 확인하세요."
+            }
+            failure_cache[cache_key] = error_result
+            return error_result
         except Exception as e:
             logger.exception("예상치 못한 오류")
             return {
                 "error": f"예상치 못한 오류: {str(e)}",
                 "recovery_guide": "시스템 오류가 발생했습니다. 서버 로그를 확인하거나 관리자에게 문의하세요."
             }
+
 

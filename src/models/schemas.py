@@ -170,3 +170,7 @@ class SearchAdministrativeRuleRequest(BaseModel):
     agency: Optional[str] = Field(None, description="부처명 (예: '고용노동부', '교육부')")
     page: int = Field(1, description="페이지 번호", ge=1)
     per_page: int = Field(20, description="페이지당 결과 수", ge=1, le=100)
+
+class GetAdminRuleDetailRequest(BaseModel):
+    """특정 행정규칙 상세 조회 요청 모델"""
+    rule_name: str = Field(..., description="조회할 행정규칙의 이름 (예: '공무원 여비 규정')")

@@ -129,6 +129,30 @@ def register_http_routes(api: FastAPI, law_service: LawService, health_service: 
                         },
                         "required": ["law_name"]
                     }
+                },
+                {
+                    "name": "search_admin_rule_tool",
+                    "description": "행정규칙(훈령, 예규, 고시, 지침 등)을 검색합니다.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {"type": "string", "description": "행정규칙 검색어"},
+                            "page": {"type": "integer", "description": "페이지 번호 (기본값: 1)"},
+                            "per_page": {"type": "integer", "description": "페이지당 결과 수 (기본값: 10, 최대: 100)"}
+                        },
+                        "required": ["query"]
+                    }
+                },
+                {
+                    "name": "get_admin_rule_detail_tool",
+                    "description": "특정 행정규칙의 상세 정보를 조회합니다.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "rule_name": {"type": "string", "description": "조회할 행정규칙의 이름 (예: '공무원 여비 규정')"}
+                        },
+                        "required": ["rule_name"]
+                    }
                 }
             ]
             
@@ -212,7 +236,40 @@ def register_http_routes(api: FastAPI, law_service: LawService, health_service: 
                 return await run_with_env(
                     law_service.get_law_detail(req, arguments=request_data)
                 )
-            
+
+            if tool_name == "search_admin_rule_tool":
+                query = request_data.get("query")
+                if not query:
+                    return {
+                        "error": "필수 파라미터 누락: query",
+                        "recovery_guide": "행정규칙 검색어(query)를 입력해주세요."
+                    }
+                page = request_data.get("page", 1)
+                per_page = request_data.get("per_page", 10)
+                convert_float_to_int(request_data, ["page", "per_page"])
+                from ..models import SearchAdministrativeRuleRequest
+                from ..services.administrative_rule_service import AdministrativeRuleService
+                req = SearchAdministrativeRuleRequest(query=query, page=page, per_page=per_page)
+                admin_rule_service = AdministrativeRuleService()
+                return await run_with_env(
+                    admin_rule_service.search_administrative_rule(req, arguments=request_data)
+                )
+
+            if tool_name == "get_admin_rule_detail_tool":
+                rule_name = request_data.get("rule_name")
+                if not rule_name:
+                    return {
+                        "error": "필수 파라미터 누락: rule_name",
+                        "recovery_guide": "행정규칙명(rule_name)을 입력해주세요. 예: '공무원 여비 규정'"
+                    }
+                from ..models import GetAdminRuleDetailRequest
+                from ..services.administrative_rule_service import AdministrativeRuleService
+                req = GetAdminRuleDetailRequest(rule_name=rule_name)
+                admin_rule_service = AdministrativeRuleService()
+                return await run_with_env(
+                    admin_rule_service.get_administrative_rule_detail(req, arguments=request_data)
+                )
+
             return {
                 "error": "도구를 찾을 수 없습니다",
                 "recovery_guide": "요청한 도구가 존재하지 않습니다. 사용 가능한 도구 목록을 확인하세요."

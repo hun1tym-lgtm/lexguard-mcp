@@ -319,6 +319,34 @@ def register_mcp_routes(api: FastAPI, law_service: LawService, health_service: H
                                     "api_status": {"type": "string"}
                                 }
                             }
+                        },
+                        {
+                            "name": "search_admin_rule_tool",
+                            "priority": 3,
+                            "category": "law",
+                            "description": "행정규칙(훈령, 예규, 고시, 지침 등)을 검색합니다.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "query": {"type": "string", "description": "행정규칙 검색어"},
+                                    "page": {"type": "integer", "description": "페이지 번호 (기본값: 1)"},
+                                    "per_page": {"type": "integer", "description": "페이지당 결과 수 (기본값: 10, 최대: 100)"}
+                                },
+                                "required": ["query"]
+                            }
+                        },
+                        {
+                            "name": "get_admin_rule_detail_tool",
+                            "priority": 3,
+                            "category": "law",
+                            "description": "특정 행정규칙의 상세 정보를 조회합니다.",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "rule_name": {"type": "string", "description": "조회할 행정규칙의 이름 (예: '공무원 여비 규정')"}
+                                },
+                                "required": ["rule_name"]
+                            }
                         }
                     ]
                     
@@ -390,6 +418,36 @@ def register_mcp_routes(api: FastAPI, law_service: LawService, health_service: H
                                 max_clauses,
                                 max_results
                             )
+                        
+                        elif tool_name == "search_admin_rule_tool":
+                            query = arguments.get("query")
+                            page = arguments.get("page", 1)
+                            per_page = arguments.get("per_page", 10)
+                            if not query:
+                                result = {
+                                    "error": "필수 파라미터 누락: query",
+                                    "recovery_guide": "행정규칙 검색어(query)를 입력해주세요."
+                                }
+                            else:
+                                from ..models import SearchAdministrativeRuleRequest
+                                from ..services.administrative_rule_service import AdministrativeRuleService
+                                req = SearchAdministrativeRuleRequest(query=query, page=page, per_page=per_page)
+                                admin_rule_service = AdministrativeRuleService()
+                                result = await admin_rule_service.search_administrative_rule(req, arguments=arguments)
+
+                        elif tool_name == "get_admin_rule_detail_tool":
+                            rule_name = arguments.get("rule_name")
+                            if not rule_name:
+                                result = {
+                                    "error": "필수 파라미터 누락: rule_name",
+                                    "recovery_guide": "행정규칙명(rule_name)을 입력해주세요. 예: '공무원 여비 규정'"
+                                }
+                            else:
+                                from ..models import GetAdminRuleDetailRequest
+                                from ..services.administrative_rule_service import AdministrativeRuleService
+                                req = GetAdminRuleDetailRequest(rule_name=rule_name)
+                                admin_rule_service = AdministrativeRuleService()
+                                result = await admin_rule_service.get_administrative_rule_detail(req, arguments=arguments)
                         
                         else:
                             result = {"error": f"Unknown tool: {tool_name}"}
